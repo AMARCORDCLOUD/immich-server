@@ -12,7 +12,6 @@ import 'package:immich_mobile/widgets/settings/backup_settings/drift_backup_sett
 import 'package:immich_mobile/widgets/settings/beta_sync_settings/sync_status_and_actions.dart';
 import 'package:immich_mobile/widgets/settings/free_up_space_settings.dart';
 import 'package:immich_mobile/widgets/settings/language_settings.dart';
-import 'package:immich_mobile/widgets/settings/networking_settings/networking_settings.dart';
 import 'package:immich_mobile/widgets/settings/notification_setting.dart';
 import 'package:immich_mobile/widgets/settings/preference_settings/preference_setting.dart';
 import 'package:immich_mobile/widgets/settings/settings_card.dart';
@@ -23,7 +22,6 @@ enum SettingSection {
   backup('backup', Icons.cloud_upload_outlined, "backup_settings_subtitle"),
   freeUpSpace('free_up_space', Icons.cleaning_services_outlined, "free_up_space_settings_subtitle"),
   languages('language', Icons.language, "setting_languages_subtitle"),
-  networking('networking_settings', Icons.wifi, "networking_subtitle"),
   notifications('notifications', Icons.notifications_none_rounded, "setting_notifications_subtitle"),
   preferences('preferences_settings_title', Icons.interests_outlined, "preferences_settings_subtitle"),
   timeline('asset_list_settings_title', Icons.auto_awesome_mosaic_outlined, "asset_list_settings_subtitle"),
@@ -39,7 +37,6 @@ enum SettingSection {
     SettingSection.backup => const DriftBackupSettings(),
     SettingSection.freeUpSpace => const FreeUpSpaceSettings(),
     SettingSection.languages => const LanguageSettings(),
-    SettingSection.networking => const NetworkingSettings(),
     SettingSection.notifications => const NotificationSetting(),
     SettingSection.preferences => const PreferenceSetting(),
     SettingSection.timeline => const AssetListSettings(),

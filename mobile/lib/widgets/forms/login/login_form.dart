@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart' hide Store;
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/constants/constants.dart';
 import 'package:immich_mobile/domain/models/store.model.dart';
 import 'package:immich_mobile/entities/store.entity.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
@@ -43,8 +44,6 @@ class LoginForm extends HookConsumerWidget {
 
   final log = Logger('LoginForm');
 
-  String? _validateUrl(String? url) => normalizeAndValidateServerUrl(url) ? null : 'login_form_err_invalid_url'.tr();
-
   String? _validateEmail(String? email) {
     if (email == null || email == '') {
       return null;
@@ -75,6 +74,7 @@ class LoginForm extends HookConsumerWidget {
     final warningMessage = useState<String?>(null);
     final loginFormKey = GlobalKey<FormState>();
     final ValueNotifier<String?> serverEndpoint = useState<String?>(null);
+    final isConnecting = useState<bool>(false);
 
     checkVersionMismatch() async {
       try {
@@ -93,11 +93,7 @@ class LoginForm extends HookConsumerWidget {
       final sanitizeServerUrl = normalizeServerUrl(serverEndpointController.text);
       final serverUrl = punycodeEncodeUrl(sanitizeServerUrl);
 
-      // Guard empty URL
-      if (serverUrl.isEmpty) {
-        ImmichToast.show(context: context, msg: "login_form_server_empty".tr(), toastType: ToastType.error);
-      }
-
+      isConnecting.value = true;
       try {
         final endpoint = await ref.read(authProvider.notifier).validateServerUrl(serverUrl);
 
@@ -140,28 +136,17 @@ class LoginForm extends HookConsumerWidget {
         );
         isOauthEnable.value = false;
         isPasswordLoginEnable.value = true;
+      } finally {
+        isConnecting.value = false;
       }
     }
 
+    // Server URL is hardcoded: connect automatically instead of asking the user
     useEffect(() {
-      final serverUrl = getServerUrl();
-      if (serverUrl != null) {
-        serverEndpointController.text = serverUrl;
-      }
+      serverEndpointController.text = kServerUrl;
+      WidgetsBinding.instance.addPostFrameCallback((_) => getServerAuthSettings());
       return null;
     }, []);
-
-    populateTestLoginInfo() {
-      emailController.text = 'demo@immich.app';
-      passwordController.text = 'demo';
-      serverEndpointController.text = 'https://demo.immich.app';
-    }
-
-    populateTestLoginInfo1() {
-      emailController.text = 'testuser@email.com';
-      passwordController.text = 'password';
-      serverEndpointController.text = 'http://10.1.15.216:2283/api';
-    }
 
     Future<void> handleSyncFlow() async {
       final backgroundManager = ref.read(backgroundSyncProvider);
@@ -394,19 +379,18 @@ class LoginForm extends HookConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.max,
               children: [
-                ImmichForm(
-                  onSubmit: getServerAuthSettings,
-                  submitText: 'next'.t(context: context),
-                  submitIcon: Icons.arrow_forward_rounded,
-                  builder: (_, form) => ImmichURLInput(
-                    controller: serverEndpointController,
-                    label: 'login_form_endpoint_url'.t(context: context),
-                    hintText: 'login_form_endpoint_hint'.t(context: context),
-                    validator: _validateUrl,
-                    keyboardAction: .next,
-                    onSubmit: (_) => form.submit(),
+                if (isConnecting.value)
+                  const Padding(
+                    padding: EdgeInsets.all(ImmichSpacing.md),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else
+                  ImmichForm(
+                    onSubmit: getServerAuthSettings,
+                    submitText: 'retry'.t(context: context),
+                    submitIcon: Icons.refresh_rounded,
+                    builder: (_, __) => const SizedBox.shrink(),
                   ),
-                ),
                 ImmichTextButton(
                   labelText: 'settings'.t(context: context),
                   icon: Icons.settings,
@@ -474,10 +458,10 @@ class LoginForm extends HookConsumerWidget {
                 if (!isOauthEnable.value && !isPasswordLoginEnable.value)
                   Center(child: const Text('login_disabled').tr()),
                 ImmichTextButton(
-                  labelText: 'back'.t(context: context),
-                  icon: Icons.arrow_back,
+                  labelText: 'settings'.t(context: context),
+                  icon: Icons.settings,
                   variant: ImmichVariant.ghost,
-                  onPressed: () => serverEndpoint.value = null,
+                  onPressed: () => context.pushRoute(const SettingsRoute()),
                 ),
               ],
             ),
@@ -498,13 +482,9 @@ class LoginForm extends HookConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      GestureDetector(
-                        onDoubleTap: () => populateTestLoginInfo(),
-                        onLongPress: () => populateTestLoginInfo1(),
-                        child: RotationTransition(
-                          turns: logoAnimationController,
-                          child: const ImmichLogo(heroTag: 'logo'),
-                        ),
+                      RotationTransition(
+                        turns: logoAnimationController,
+                        child: const ImmichLogo(heroTag: 'logo'),
                       ),
                       const Padding(padding: EdgeInsets.only(top: 8.0, bottom: 16), child: ImmichTitleText()),
                     ],
