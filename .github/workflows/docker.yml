@@ -3,7 +3,7 @@ name: Docker
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, "amarcord/custom"]
   pull_request:
   release:
     types: [published]
